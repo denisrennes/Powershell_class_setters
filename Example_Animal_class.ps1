@@ -9,6 +9,10 @@ $ErrorActionPreference = 'Stop'
 class Animal
 {
     [string] $Name
+
+    # This is the example for a Get and Set methods of the "Nb_Legs" property
+    # Unique location, inside the class definition, of the code required to validate and set a value to the "NB_Legs" property, or get its value.
+    # Found this tip in the answer from "alx9r" in Stackoverflow here: https://stackoverflow.com/questions/39717230/powershell-class-implement-get-set-property/40365941#40365941
     hidden $_Nb_Legs = $($this | Add-Member ScriptProperty 'Nb_Legs' `
         {
             # get
@@ -16,6 +20,7 @@ class Animal
         }`
         {
             # set
+            # Will throw an exception if the value is rejected
             param ( $nb_legs_arg )
             try {
                 try { [int]$nb_legs = [int]$nb_legs_arg }
