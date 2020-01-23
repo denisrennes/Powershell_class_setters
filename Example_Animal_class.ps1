@@ -28,10 +28,10 @@ class Animal
                     throw ('"NB_Legs" must be an integer: "{1}" is incorrect' -f $this.Name, $nb_legs_arg )
                 }
                 if ( ($nb_legs -lt 0) -or ($nb_legs -gt 750 ) ) {
-                    throw ('"NB_Legs" must be between 0 and 750: "{1}" is incorrect' -f $this.Name, $nb_legs_arg )
+                    throw ('"NB_Legs" must be between 0 and 750: "{0}" is incorrect' -f $nb_legs_arg )
                 }
                 if ( ($nb_legs % 2) -ne 0 ) {
-                    throw ('"NB_Legs" must be even: "{1}" is incorrect' -f $this.Name, $nb_legs_arg )
+                    throw ('"NB_Legs" must be even: "{0}" is incorrect' -f $nb_legs_arg )
                 }
                 $this._Nb_Legs = [int]$nb_Legs
             }
