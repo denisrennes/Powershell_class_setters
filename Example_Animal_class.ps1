@@ -97,3 +97,5 @@ write-verbose ( '{0} animals were accepted' -f $animal_list.Count )
 
 try { $animal_list[0].Nb_Legs = 3333 } catch {}
 write-verbose ( 'The animal "{0}" has {1} legs!' -f $animal_list[0].Name, $animal_list[0].Nb_Legs )
+
+write-verbose ( ($animal_list | ft -auto ) | Out-STring )
