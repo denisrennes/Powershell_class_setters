@@ -6,11 +6,15 @@ Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 
 
+# $NL = New Line constant: 0x0D0A for Windows platform, 0x0A for Unix
+$NL = [Environment]::NewLine
+
 class Animal
 {
     [string] $Name
 
     # This is the example for a Get and Set methods of the "Nb_Legs" property
+   	# Never use "_Nb_Legs"! It is a hidden property that allows to create the actual 'Language' property with Get and Set accessors
     # Unique location, inside the class definition, of the code required to validate and set a value to the "NB_Legs" property, or get its value.
     # Found this tip in the answer from "alx9r" in Stackoverflow here: https://stackoverflow.com/questions/39717230/powershell-class-implement-get-set-property/40365941#40365941
     hidden [int] $_Nb_Legs = $($this | Add-Member ScriptProperty 'Nb_Legs' `
@@ -58,10 +62,10 @@ class Animal
         }   
     }
 
-    # Constructor with 1 argument like "cat=4": a string with 2 fields separated with '=', 1st field is the animal name, the 2nd field is its number of legs
+    # Constructor with 1 argument like "cat: 4", a string with 2 fields separated with ':'. The 1st field is the animal name, the 2nd field is its number of legs
     Animal( [string] $name_eq_nblegs )
     {
-        $fields = $name_eq_nblegs -split '='
+        $fields = $name_eq_nblegs -split ':'
         if ( $fields.Count -ne 2 ) { 
             # rejected by the constructor argument parser
             $message = 'Animal("{0}") is rejected: it does not contain 2 fields separated with ''=''' -f $name_eq_nblegs
@@ -70,9 +74,9 @@ class Animal
         }
         
         try { 
-            $this.Name = $fields[0]
-            $this.Nb_Legs = $fields[1]
-            Write-Verbose ( 'Animal("{0}={1}") is accepted' -f $this.Name, $this.Nb_Legs )   
+            $this.Name = $fields[0].Trim()
+            $this.Nb_Legs = $fields[1].Trim()
+            Write-Verbose ( 'Animal("{0}") is accepted' -f $name_eq_nblegs )   
         }
         catch { 
             # rejected by property setters
@@ -81,21 +85,51 @@ class Animal
             throw $message
         }
     }
+
+    # Constructor without argument (default construction): required for the Clone() optimized method
+    # Should not be used outside the class: it could lead to non-valid animal objects with some empty properties
+    hidden Animal( )
+    {
+    }
+
+    # Object cloning: avoids side effects when two variables contain the same object
+    # This is the optimized version: it does not call the property accessors but it requires the default constructor without any parameter
+    [Animal]Clone() {
+        $cloned = [Animal]::New()
+        $cloned.Name = $this.Name
+        $cloned._Nb_Legs = $this._Nb_Legs
+        return $cloned
+	}
+
+
+    # ToString() method is very commonly required. Examples here: 'cat: 4', 'millepede: 750'
+	[string]ToString() {
+		$result = $this.Name
+		if ( $this.Quality -ne 1 ) {
+			$result += ': ' + $this.Nb_Legs
+		}
+		return $result
+	}
 }
 
-$animal_list_input = @('Cat=4', 'Millepede=1000', 'Spider=8', 'human=four' )
+$animal_list_input = @('Cat:4', 'Millepede: 1000', 'Spider:8', 'human:four' )
 
 $animal_list = $animal_list_input | Foreach-Object { try { [Animal]::New($_) } catch { } }
 
 write-verbose ( '{0} animals were accepted' -f $animal_list.Count )
 
 $animal_list +=  try{ [Animal]::New('Dog', 4) } catch{}
-$animal_list +=  try{ [Animal]::New('Ant=6') } catch{}
-$animal_list +=  try{ [Animal]::New('kangaroo', 3) } catch {}
+$animal_list +=  try{ [Animal]::New('Ant: 6') } catch{}
+$animal_list +=  try{ [Animal]::New('kangaroo:3') } catch {}
 
 write-verbose ( '{0} animals were accepted' -f $animal_list.Count )
 
 try { $animal_list[0].Nb_Legs = 3333 } catch {}
 write-verbose ( 'The animal "{0}" has {1} legs!' -f $animal_list[0].Name, $animal_list[0].Nb_Legs )
 
-write-verbose ( ($animal_list | ft -auto ) | Out-STring )
+
+$animal_list2 = @( $animal_list | % { $_.Clone() } )
+try { $animal_list2[0].Nb_Legs = 42 } catch {}
+
+write-verbose ( 'animal_list:' + (($animal_list | ft -auto ) | Out-String).TrimEnd($NL) )
+write-verbose ( 'animal_list2:' + (($animal_list2 | ft -auto ) | Out-String).TrimEnd($NL) )
